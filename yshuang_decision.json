@@ -1,0 +1,31 @@
+[
+  {
+    "date": "2020-04-30",
+    "model": "chatgpt",
+    "scenario": "morning",
+    "method": "naive.txt",
+    "buy": [
+      "1108"
+    ],
+    "sell": [
+      "1109",
+      "2330",
+      "1109"
+    ]
+  },
+  {
+    "date": "2020-04-30",
+    "source": "human",
+    "scenario": "morning",
+    "method": "segments",
+    "buy": [
+      "1104",
+      "1213",
+      "1109"
+    ],
+    "sell": [
+      "1108",
+      "1203"
+    ]
+  }
+]
