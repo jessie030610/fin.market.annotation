@@ -1,0 +1,14 @@
+{
+  "date": "20210201",
+  "source": "chatgpt",
+  "scenario": "morning",
+  "method": "by_company",
+  "buy": [
+    "1108"
+  ],
+  "sell": [
+    "2430",
+    "3010"
+  ],
+  "reason": "對"
+}

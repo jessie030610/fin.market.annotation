@@ -1,0 +1,16 @@
+{
+  "date": "20201023",
+  "source": "human",
+  "scenario": "morning",
+  "method": "human",
+  "buy": [
+    "1109",
+    "1218"
+  ],
+  "sell": [
+    "1104",
+    "1445",
+    "1446"
+  ],
+  "reason": "大概這樣"
+}
