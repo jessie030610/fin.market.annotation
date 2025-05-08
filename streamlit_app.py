@@ -2,7 +2,9 @@ import streamlit as st
 import datetime
 import json
 import os
+import random
 import pandas as pd
+from pathlib import Path
 
 # --- Rerun helper ---
 try:
@@ -24,28 +26,31 @@ def load_companies(csv_path="companies.csv"):
     return df
 
 @st.cache_data
-def load_dates(txt_path="dates.txt"):
+def load_dates(txt_path="random30.dates"):
     if os.path.exists(txt_path):
         with open(txt_path, 'r', encoding='utf-8') as f:
             return [line.strip() for line in f if line.strip()]
     return []
 
+@st.cache_data
+def load_corpus(corpus_path="./corpus/"):
+    corpus = {}
+    for filename in os.listdir(corpus_path):
+        if filename.endswith('.txt'):
+            with open(os.path.join(corpus_path, filename), 'r', encoding='utf-8') as f:
+                corpus[filename] = f.read()
+    corpus_names = list(corpus.keys())
+    random.shuffle(corpus_names)
+    return corpus, corpus_names
+
+
 # --- Data preparation ---
 companies_df = load_companies()
 options = companies_df['display'].tolist()
 date_list = load_dates()
-# Scan AI-generated report models
-base_report_dir = os.path.join('..', 'generated_report')
-llm_list = []
-if os.path.exists(base_report_dir):
-    llm_list = [d for d in os.listdir(base_report_dir) if os.path.isdir(os.path.join(base_report_dir, d))]
-# Always include human option if sample data exists
-sample_dir_root = os.path.join('..', 'sample')
-sample_dates = []
-if os.path.exists(sample_dir_root):
-    sample_dates = [d for d in os.listdir(sample_dir_root) if os.path.isdir(os.path.join(sample_dir_root, d))]
-if sample_dates:
-    llm_list.append('human')
+corpus, corpus_names = load_corpus()
+
+
 
 # --- Session state ---
 if 'idx' not in st.session_state:
@@ -128,34 +133,22 @@ st.subheader("Your Decisions")
 buy_selection = st.multiselect("Select companies to BUY", options, key="buy")
 sell_selection = st.multiselect("Select companies to SELL", options, key="sell")
 
+reason = st.text_area("Briefly describe the reason for your decision", height=100)
+
+
 # Confirm
 if st.button("Confirm Decision"):
     buy_list = [item.split()[0] for item in buy_selection]
     sell_list = [item.split()[0] for item in sell_selection]
     decision = {
-        'date': selected_date.isoformat(),
-        'source': llm,
-        'scenario': scenario,
-        'method': method if llm.lower()!='human' and methods else ('segments' if llm.lower()=='human' and os.path.exists(seg_file) else 'raw' if llm.lower()=='human' and os.path.exists(raw_file) else 'manual'),
         'buy': buy_list,
         'sell': sell_list
     }
     safe_name = user_name.strip().replace(' ', '_')
-    filename = f"{safe_name}_decision.json"
+    filename = Path("invest_result") / f'read_{source}' / safe_name / f'{selected_date}_{scenario}.json'
     # Save
-    if os.path.exists(filename):
-        with open(filename, 'r+', encoding='utf-8') as f:
-            try:
-                data = json.load(f)
-            except json.JSONDecodeError:
-                data = []
-            data.append(decision)
-            f.seek(0)
-            json.dump(data, f, indent=2, ensure_ascii=False)
-            f.truncate()
-    else:
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump([decision], f, indent=2, ensure_ascii=False)
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(decision, f, indent=2, ensure_ascii=False)
     st.success(f"Saved to {filename}")
     st.session_state.idx += 1
     rerun()
