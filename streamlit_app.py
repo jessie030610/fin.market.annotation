@@ -50,83 +50,60 @@ options = companies_df['display'].tolist()
 date_list = load_dates()
 corpus, corpus_names = load_corpus()
 
+# --- Collect annotator name once ---
+if 'annotator' not in st.session_state:
+    name = st.text_input("Enter your name to start annotation:")
+    if name and name.strip():
+        st.session_state.annotator = name.strip()
+        st.experimental_rerun()
+    else:
+        st.stop()
+annotator = st.session_state.annotator
 
+total = len(corpus_names)
+if 'task_idx' not in st.session_state:
+    st.session_state.task_idx = 0
+idx = st.session_state.task_idx
+if total == 0:
+    st.error("No corpus files found in ./corpus")
+    st.stop()
+if idx >= total:
+    st.success("All tasks completed!")
+    st.stop()
+
+task_file = corpus_names[idx]
+# parse task fields
+date_key, scenario, method = None, None, None
+parts = task_file[:-4].split('_')  # remove .txt
+if len(parts) >= 4:
+    source = parts[0]
+    date_key = parts[1]
+    scenario = parts[2]
+    method = '_'.join(parts[3:])
+elif len(parts) == 3:
+    source, date_key, scenario = parts
+    method = 'human'
+else:
+    st.error(f"Unrecognized file format: {task_file}")
+    st.stop()
 
 # --- Session state ---
 if 'idx' not in st.session_state:
     st.session_state.idx = 0
 
 # --- App layout ---
-st.title("Market Commentary Decision Tool")
-# User name
-user_name = st.text_input("Enter your name:")
-if not user_name.strip():
-    st.warning("Please enter your name to continue.")
-    st.stop()
+# Display UI
+# --- UI ---
+st.title("Market Commentary Annotation Tool")
+st.write(f"Annotator: **{annotator}**")
+st.progress((idx+1)/total)
+st.write(f"Task {idx+1}/{total}")
+st.write(f"**Scenario:** {scenario}")
 
-# Dates check
-if not date_list:
-    st.error("No dates found in dates.txt. Please add dates (YYYY-MM-DD or YYYYMMDD) one per line.")
-    st.stop()
-if st.session_state.idx >= len(date_list):
-    st.success("All dates have been evaluated!")
-    st.stop()
-
-# Parse date
-current_date_str = date_list[st.session_state.idx]
-try:
-    selected_date = datetime.datetime.strptime(current_date_str, "%Y-%m-%d").date()
-except ValueError:
-    try:
-        selected_date = datetime.datetime.strptime(current_date_str, "%Y%m%d").date()
-    except ValueError:
-        st.error(f"Invalid date: {current_date_str}. Use YYYY-MM-DD or YYYYMMDD.")
-        st.stop()
-
-# Display progress
-st.write(f"**Date:** {selected_date.isoformat()}  ({st.session_state.idx+1}/{len(date_list)})")
-
-# LLM and scenario selection
-llm = st.selectbox("Source", llm_list or ["chatgpt"])
-scenario = st.selectbox("Scenario", ["morning", "closing"])
-
-# Market Commentary
+# Show commentary
 st.subheader("Market Commentary")
-date_key = selected_date.strftime('%Y%m%d')
-commentary = ""
-
-if llm.lower() == 'human':
-    # Human-generated: load cleaned segments if available
-    sample_dir = os.path.join('..', 'sample', date_key)
-    seg_file = os.path.join(sample_dir, f"{scenario}_segments.json")
-    raw_file = os.path.join(sample_dir, f"{scenario}.raw")
-    if os.path.exists(seg_file):
-        with open(seg_file, 'r', encoding='utf-8') as f:
-            segments = json.load(f)
-        commentary = "\n\n".join([seg.get('segment','') for seg in segments])
-    elif os.path.exists(raw_file):
-        commentary = open(raw_file, 'r', encoding='utf-8').read()
-    else:
-        commentary = st.text_area("Enter human commentary (Markdown)", height=200)
-        st.markdown(commentary)
-        commentary = None
-
-else:
-    # AI-generated
-    base_dir = os.path.join('..', 'generated_report', llm, date_key, scenario)
-    methods = []
-    if os.path.isdir(base_dir):
-        methods = [f for f in os.listdir(base_dir) if f.endswith('.txt')]
-    if methods:
-        method = st.selectbox("Method", methods)
-        report_path = os.path.join(base_dir, method)
-        with open(report_path, 'r', encoding='utf-8') as f:
-            commentary = f.read()
-    else:
-        commentary = st.text_area("Enter AI commentary (Markdown)", height=200)
-
-if commentary:
-    st.markdown(commentary)
+content = corpus[task_file]
+st.markdown(content)
 
 # Decisions input
 st.subheader("Your Decisions")
