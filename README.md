@@ -39,3 +39,31 @@
    * 選擇賣出的股票跌幅 > 0.5% 視為成功
    * 其他情況皆視為失敗
    * 我們會根據你的選擇與實際漲跌幅進行比對，計算出你的成功率。
+
+如果你想查看台股有哪些股票以及公司代碼，請查看 `companies.csv` 檔案，這是我們提供的台股公司清單。你可以在標註介面中使用這些代碼來選擇股票。
+
+# 啟動指南
+
+請在 macOS/Linux 終端機中，依序執行以下指令，將專案 clone 下來並啟動 Streamlit 應用。
+
+```bash
+# 1. 取得程式碼
+git clone git@github.com:hyusterr/fin.market.annotation.git
+
+# 2. 切換到專案資料夾
+cd fin.market.annotation
+
+# 3. 建立 Python 虛擬環境
+python3 -m venv streamlit_env
+
+# 4. 啟動虛擬環境
+source streamlit_env/bin/activate
+
+# 5. 安裝必要套件
+pip install streamlit pandas
+# 或一次安裝 requirements.txt 內所有依賴
+# pip install -r requirements.txt
+
+# 6. 啟動 Streamlit 應用
+streamlit run streamlit_app.py
+```
