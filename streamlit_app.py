@@ -84,7 +84,8 @@ idx = st.session_state.task_idx
 
 
 # --- Parse current task ---
-parts = next_todo.split('_')
+parts = next_todo.split('_') # chatgpt_20200915_closing_base_on_topk_morning.txt
+# generator _ date _ scenario _ method .txt
 source = parts[0]
 if len(parts) >= 4:
     date_key, scenario = parts[1], parts[2]
