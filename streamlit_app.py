@@ -3,6 +3,7 @@ import json
 import os
 import random
 from pathlib import Path
+import time
 import datetime
 import pandas as pd
 st.set_page_config(layout="wide")
@@ -101,6 +102,11 @@ st.write(f"Task {len(done) + 1} of {len(order_list)}")
 word_count = len(corpus[next_todo])
 st.write(f"字數: {word_count}\t預計閱讀時間: {word_count // 400} 分鐘")
 
+# --- Track reading start time ---
+start_key = f"start_time_{idx}"
+if start_key not in st.session_state:
+    st.session_state[start_key] = datetime.datetime.now()
+
 # Layout: two columns side by side
 col1, col2 = st.columns([2, 1])
 
@@ -119,24 +125,12 @@ with col2:
     buy_selection = st.multiselect("BUY", options, key=f"buy_{idx}", placeholder="Select companies to buy, or leave blank")
     sell_selection = st.multiselect("SELL", options, key=f"sell_{idx}", placeholder="Select companies to sell, or leave blank")
     reason = st.text_area("Reason (required)", height=150, key=f"reason_{idx}", placeholder="Briefly Explain your decision")
-    if st.button("Confirm", key=f"confirm_{idx}"):
-        buy_list = [item.split()[0] for item in buy_selection]
-        sell_list = [item.split()[0] for item in sell_selection]
-        decision = {
-            'date': date_key,
-            'source': source,
-            'scenario': scenario,
-            'method': method,
-            'buy': buy_list,
-            'sell': sell_list,
-            'reason': reason
-        }
-        outdir = Path('invest_result') / annotator 
-        outdir.mkdir(parents=True, exist_ok=True)
-        outfile = outdir / (next_todo + '.json')
-        outfile.write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding='utf-8')
-        st.success("Decision recorded")
+
     if st.button("Next", key=f"next_{idx}"):
+        end_time = datetime.datetime.now()
+        start_time = st.session_state[start_key]
+        duration = (end_time - start_time).total_seconds()
+
         buy_list = [item.split()[0] for item in buy_selection]
         sell_list = [item.split()[0] for item in sell_selection]
         decision = {
@@ -146,11 +140,14 @@ with col2:
             'method': method,
             'buy': buy_list,
             'sell': sell_list,
-            'reason': reason
+            'reason': reason,
+            'duration': round(duration, 4),
         }
         outdir = Path('invest_result') / annotator 
         outdir.mkdir(parents=True, exist_ok=True)
         outfile = outdir / (next_todo + '.json')
         outfile.write_text(json.dumps(decision, ensure_ascii=False, indent=2), encoding='utf-8')
         st.session_state.task_idx += 1
+        del st.session_state[start_key]
+
         st.rerun()
